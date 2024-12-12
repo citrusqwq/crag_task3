@@ -1,0 +1,9 @@
+{
+    "challenge_id": "meta-kdd-cup-24-crag-end-to-end-retrieval-augmented-generation",
+    "authors": [
+      "Ye Yuan", "Jingyang Yuan", "Siqi Li", "Gongbo Sun", "You Wu", "Chengwu Liu"
+    ],
+    "gpu": true,
+    "gpu_count": 4,
+    "description": "Baseline Test"
+}
