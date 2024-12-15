@@ -517,8 +517,8 @@ class CalcAgent:
         '''
         generated_expression_responses = []
         for expression_prompt in expression_prompts:
-            response = self.llm.chat.completions.create(
-                model=self.model_name,
+            response = llm.chat.completions.create(
+                model="llama3.1:8b-instruct-q8_0",
                 messages=expression_prompt,
                 n=self.expression_sample_num,  # Number of output sequences to return for each prompt.
                 top_p=0.9,  # Float that controls the cumulative probability of the top tokens to consider.
@@ -541,7 +541,7 @@ class CalcAgent:
             for _idx in range(self.expression_sample_num):
                 try:
                     # FIXME: May have bugs in _idx?
-                    curr_expression = response.outputs[_idx].text.strip().rstrip()
+                    curr_expression = response["outputs"][_idx]["text"].strip().rstrip()
                 except IndexError as e:
                     logger.error("Got index error: {}".format(traceback.format_exc()))
                     logger.error("IDX: {}".format(_idx))
@@ -1218,8 +1218,8 @@ class KGRAGModelTask3:
                 idx,
                 response,
             )
-            all_ret_answers = [o.text.strip().rstrip() for o in response.outputs]
-            #all_ret_answers = [o['message']['content'].strip().rstrip() for o in response['choices']]
+            #all_ret_answers = [o["text"].strip().rstrip() for o in response["outputs"]]
+            all_ret_answers = [o.message.content.strip().rstrip() for o in response.choices]
             all_reasoning_outputs[pred_idxs[idx]] = all_ret_answers
             is_idk = False
             for tmp_ret_answer in all_ret_answers:
@@ -1249,7 +1249,7 @@ class KGRAGModelTask3:
                     {"Parse success": True, "Parsed result": "invalid question"}
                 )
                 continue
-            ret_answer = response.outputs[0].text.strip().rstrip()
+            ret_answer = response.choices[0].message.content.strip().rstrip()
             try:
                 ret_answer_lower = ret_answer.lower()
                 assert "## answer:" in ret_answer_lower
@@ -1386,7 +1386,8 @@ class KGRAGModelTask3:
             )
             #ret_answer = response.outputs[0].text.strip().rstrip()
             ret_answer = response.choices[0].message.content.strip().rstrip()
-            prompt_lens.append(len(response.prompt_token_ids))
+            #prompt_lens.append(len(response.prompt_token_ids))
+            prompt_lens.append(response.usage.prompt_tokens)
             if ret_answer == "":
                 ret_answer = "I don't know."
             if "i don't know" in ret_answer.lower():

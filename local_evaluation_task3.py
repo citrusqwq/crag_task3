@@ -325,7 +325,7 @@ def old_generate_predictions(dataset_path, participant_model, args):
                     query, web_search_results, query_time
                 )
                 # trim prediction to 75 tokens
-                prediction = trim_predictions_to_max_token_length(prediction)
+                #prediction = trim_predictions_to_max_token_length(prediction)
                 predictions.append(
                     {
                         "query": query,
@@ -353,7 +353,7 @@ def old_generate_predictions(dataset_path, participant_model, args):
                 query, web_search_results, query_time
             )
             # trim prediction to 75 tokens
-            prediction = trim_predictions_to_max_token_length(prediction)
+            #prediction = trim_predictions_to_max_token_length(prediction)
             predictions.append(
                 {
                     "query": query,
