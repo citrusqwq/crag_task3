@@ -3,9 +3,9 @@ from openai import OpenAI
 import os
 
 llm = OpenAI(
-            base_url=os.getenv("INTERWEB_HOST", "https://interweb.l3s.uni-hannover.de"),
-            api_key=os.getenv("INTERWEB_APIKEY"),
-        )
+    base_url=os.getenv("INTERWEB_HOST", "https://interweb.l3s.uni-hannover.de"),
+    api_key=os.getenv("INTERWEB_APIKEY"),
+)
 
 
 # Sample query batch
@@ -14,7 +14,7 @@ batch = {
         "What is the population of Japan?",
         "What time is the next train to New York?",
         "Who is the President of the United States?",
-        "When will the next solar eclipse occur?"
+        "When will the next solar eclipse occur?",
     ]
 }
 
@@ -26,15 +26,16 @@ few_shots = [
 
 # Call the predict_static_or_dynamic method
 answers = predict_static_or_dynamic(
-    llm=llm,  
-    batch=batch,
-    sample_num=1,
-    few_shots=few_shots
+    llm=llm, batch=batch, sample_num=1, few_shots=few_shots
 )
 
 # Print results
 print(answers)
 
+
+# List available models
+models = llm.models.list()
+print(models)
 
 
 '''

@@ -1,0 +1,9 @@
+.vscode
+__pycache__
+api_responses/*.json
+api_key.py
+*local_eval_logs*/
+.hypothesis/
+/Log
+.DS_Store
+/models/__pycache__/

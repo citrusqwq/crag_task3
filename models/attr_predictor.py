@@ -5,30 +5,32 @@ import pickle
 import numpy as np
 import torch
 import time
-#import vllm
+
+# import vllm
 import math
 import random
 import Levenshtein
 from loguru import logger
 from tqdm import tqdm
 from typing import Dict, List
-from sentence_transformers import SentenceTransformer
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    pipeline,
-    TextGenerationPipeline,
-    PreTrainedTokenizer,
-    PreTrainedTokenizerFast,
-)
+
+# from sentence_transformers import SentenceTransformer
+# from transformers import (
+#    AutoModelForCausalLM,
+#    AutoTokenizer,
+#    BitsAndBytesConfig,
+#    pipeline,
+#    TextGenerationPipeline,
+#    PreTrainedTokenizer,
+#    PreTrainedTokenizerFast,
+# )
 from loguru import logger
 from openai import OpenAI
 
 
-#tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
 
-'''
+"""
 def format_prompt(
     tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast,
     system_prompt: str,
@@ -51,28 +53,29 @@ def format_prompt(
             )
         )
     return formatted_prompts
-'''
+"""
+
+
 def format_prompt(
     system_prompt: str, user_prompt_template: str, queries: list[str]
 ) -> list[list[dict]]:
     formatted_prompts = []
     for query in queries:
-        formatted_prompts.append([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt_template.format(query=query)}
-        ])
+        formatted_prompts.append(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt_template.format(query=query)},
+            ]
+        )
     return formatted_prompts
-
 
 
 def predict_domain(llm: OpenAI, batch, sample_num: int = 5):
     queries = batch["query"]
     system_prompt = """You are provided with a question. Your task is to answer the domain of this question. You **MUST** choose from the following domains: ["finance", "music", "movie", "sports", "open"]. You **MUST** give the domain succinctly, using the fewest words possible."""
     user_prompt = """Here is the question: {query}\nWhat is the domain of this question? Remember your rule: You **MUST** choose from the following domains: ["finance", "music", "movie", "sports", "open"]."""
-    formatted_prompts = format_prompt(
-        system_prompt, user_prompt, queries
-    )
-    '''
+    formatted_prompts = format_prompt(system_prompt, user_prompt, queries)
+    """
     responses = llm.generate(
         formatted_prompts,
         vllm.SamplingParams(
@@ -84,26 +87,26 @@ def predict_domain(llm: OpenAI, batch, sample_num: int = 5):
         ),
         use_tqdm=False,
     )
-    '''
+    """
     sample_num = 1
     responses = []
     for prompt in formatted_prompts:
         response = llm.chat.completions.create(
-            model="llama3.1:8b-instruct-q8_0",
+            model="llama3.3:70b",
             messages=prompt,
             n=sample_num,  # Generate multiple samples
             temperature=0.1,  # Low randomness
             top_p=0.9,  # Control cumulative probability
-            max_tokens=10  # Limit output length
+            max_tokens=10,  # Limit output length
         )
         responses.append(response)
-    
+
     answers = []
     for response in responses:
-        #curr_samples = [
+        # curr_samples = [
         #    #response.outputs[idx].text.strip().rstrip() for idx in range(sample_num)
         #    response["choices"][idx]["message"]["content"].strip() for idx in range(sample_num)
-        #]
+        # ]
         curr_samples = [
             response.choices[idx].message.content.strip() for idx in range(sample_num)
         ]
@@ -144,10 +147,8 @@ def predict_question_type(
                 )
             )
     user_prompt = """Here is the question: {query}\nRemember your rule: You **MUST** choose from the following choices: ["simple", "complex"].\nWhat is the question type of this question?"""
-    formatted_prompts = format_prompt(
-        system_prompt, user_prompt, queries
-    )
-    '''
+    formatted_prompts = format_prompt(system_prompt, user_prompt, queries)
+    """
     responses = llm.generate(
         formatted_prompts,
         vllm.SamplingParams(
@@ -159,26 +160,26 @@ def predict_question_type(
         ),
         use_tqdm=False,
     )
-    '''
-    sample_num = 1 
+    """
+    sample_num = 1
     responses = []
     for prompt in formatted_prompts:
         response = llm.chat.completions.create(
-            model="llama3.1:8b-instruct-q8_0",
+            model="llama3.3:70b",
             messages=prompt,
             n=sample_num,  # Generate multiple samples
             temperature=0.1,  # Low randomness
             top_p=0.9,  # Control cumulative probability
-            max_tokens=10  # Limit output length
+            max_tokens=10,  # Limit output length
         )
         responses.append(response)
 
     answers = []
     for response in responses:
-        #curr_samples = [
+        # curr_samples = [
         #    #response.outputs[idx].text.strip().rstrip() for idx in range(sample_num)
         #    response["choices"][idx]["message"]["content"].strip() for idx in range(sample_num)
-        #]
+        # ]
         curr_samples = [
             response.choices[idx].message.content.strip() for idx in range(sample_num)
         ]
@@ -219,10 +220,8 @@ def predict_static_or_dynamic(
                 )
             )
     user_prompt = """Here is the question: {query}\nRemember your rule: You **MUST** choose from the following choices: ["static", "dynamic"].\nWhat is the static or dynamic of this question?"""
-    formatted_prompts = format_prompt(
-        system_prompt, user_prompt, queries
-    )
-    '''
+    formatted_prompts = format_prompt(system_prompt, user_prompt, queries)
+    """
     responses = llm.generate(
         formatted_prompts,
         vllm.SamplingParams(
@@ -234,27 +233,27 @@ def predict_static_or_dynamic(
         ),
         use_tqdm=False,
     )
-    '''
+    """
     sample_num = 1
     responses = []
     for prompt in formatted_prompts:
         print(prompt)
         response = llm.chat.completions.create(
-            model="llama3.1:8b-instruct-q8_0",
+            model="llama3.3:70b",
             messages=prompt,
             n=sample_num,  # Generate multiple samples
             temperature=0.1,  # Low randomness
             top_p=0.9,  # Control cumulative probability
-            max_tokens=10  # Limit output length
+            max_tokens=10,  # Limit output length
         )
         responses.append(response)
         print(response)
     answers = []
     for response in responses:
-        #curr_samples = [
+        # curr_samples = [
         #    #response.outputs[idx].text.strip().rstrip() for idx in range(sample_num)
         #    response["choices"][idx]["message"]["content"].strip() for idx in range(sample_num)
-        #]
+        # ]
         curr_samples = [
             response.choices[idx].message.content.strip() for idx in range(sample_num)
         ]

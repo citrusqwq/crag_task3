@@ -5,7 +5,8 @@ from typing import Any, Dict, List
 import numpy as np
 import ray
 import torch
-#import vllm
+
+# import vllm
 import json
 import math
 import trafilatura
@@ -17,7 +18,8 @@ from loguru import logger
 from blingfire import text_to_sentences_and_offsets
 from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
-from transformers import AutoTokenizer, AutoModel
+
+# from transformers import AutoTokenizer, AutoModel
 from models.attr_predictor import AttrPredictor
 from models.utils_html import get_tables, clean_html
 from utils.cragapi_wrapper import CRAG
@@ -25,7 +27,7 @@ from utils.cragapi_wrapper import CRAG
 from openai import OpenAI
 
 logger.level("DEBUG")
-CRAG_MOCK_API_URL = os.getenv("CRAG_MOCK_API_URL", "http://localhost:8000")
+CRAG_MOCK_API_URL = os.getenv("CRAG_MOCK_API_URL", "https://demo3.kbs.uni-hannover.de")
 
 
 #### CONFIG PARAMETERS ---
@@ -421,7 +423,7 @@ class ChunkTableExtractor:
 class CalcAgent:
     def __init__(self, max_table_length=6000):
         self.max_table_length = max_table_length
-        #self.expression_sample_num = 5
+        # self.expression_sample_num = 5
         self.expression_sample_num = 1
 
     def format_expression_prompts(
@@ -429,7 +431,7 @@ class CalcAgent:
         batch_queries: list[str],
         batch_retrieval_results: list[list[str]],
         batch_tables: list[list[str]],
-        #tokenizer: AutoTokenizer,
+        # tokenizer: AutoTokenizer,
     ) -> list[str]:
         system_prompt = """You are provided with a question and various references. Your task is to generate a possible useful expression that is needed to answer the question. Here are the rules:
 1. The expression **MUST** be a valid Python expression.
@@ -472,7 +474,7 @@ class CalcAgent:
             user_message += f"Question: {query}\n"
             user_message += f"Using the references listed above and based on the question, generate a valid Python expression for me: \n"
 
-            '''
+            """
             formatted_prompts.append(
                 tokenizer.apply_chat_template(
                     [
@@ -483,7 +485,7 @@ class CalcAgent:
                     add_generation_prompt=True,
                 )
             )
-            '''
+            """
             formatted_prompts.append(
                 [
                     {"role": "system", "content": system_prompt},
@@ -502,7 +504,7 @@ class CalcAgent:
         expression_prompts = self.format_expression_prompts(
             batch_queries, batch_retrieval_results, batch_tables
         )
-        '''
+        """
         generated_expression_responses = llm.generate(
             expression_prompts,
             vllm.SamplingParams(
@@ -514,11 +516,11 @@ class CalcAgent:
             ),
             use_tqdm=False,  # you might consider setting this to True during local development
         )
-        '''
+        """
         generated_expression_responses = []
         for expression_prompt in expression_prompts:
             response = llm.chat.completions.create(
-                model="llama3.1:8b-instruct-q8_0",
+                model="llama3.3:70b",
                 messages=expression_prompt,
                 n=self.expression_sample_num,  # Number of output sequences to return for each prompt.
                 top_p=0.9,  # Float that controls the cumulative probability of the top tokens to consider.
@@ -527,12 +529,9 @@ class CalcAgent:
             )
 
             formatted_response = {
-                "outputs": [
-                    {"text": response.choices[0].message.content.strip()} 
-                ]
+                "outputs": [{"text": response.choices[0].message.content.strip()}]
             }
             generated_expression_responses.append(formatted_response)
-
 
         generated_expressions = []
         for response in generated_expression_responses:
@@ -582,7 +581,8 @@ class CalcAgent:
             generated_expressions.append(curr_generated_expressions)
         return generated_expressions
 
-'''
+
+"""
 class CustomSentenceEmbeddingModel:
     def __init__(self, model_path: str, max_length: int):
         self.device = torch.device("cuda:0")
@@ -635,7 +635,8 @@ class CustomSentenceEmbeddingModel:
                 all_embeddings.append(embeddings)
             embeddings = torch.cat(all_embeddings, dim=0).cpu().detach().numpy()
         return embeddings
-'''
+"""
+
 
 class KGRAGModelTask3:
     """
@@ -744,22 +745,20 @@ class KGRAGModelTask3:
         )
 
     def initialize_models(self):
-        # Initialize Meta Llama 3 - 8B Instruct Model
-        self.model_name = "llama3.1:8b-instruct-q8_0"
+        # Initialize Meta Llama 3 - 8B Instruct Model / llama3.3:70b
+        self.model_name = "llama3.3:70b"
 
         self.llm = OpenAI(
             base_url=os.getenv("INTERWEB_HOST", "https://interweb.l3s.uni-hannover.de"),
             api_key=os.getenv("INTERWEB_APIKEY"),
         )
-        #self.tokenizer = AutoTokenizer.from_pretrained("llama3.1:8b-instruct-q8_0")
-        #self.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+        # self.tokenizer = AutoTokenizer.from_pretrained("llama3.1:8b-instruct-q8_0")
+        # self.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
 
         # Load a sentence transformer model optimized for sentence embeddings, using CUDA if available.
         self.sentence_model = SentenceTransformer(
             "sentence-transformers/sentence-t5-large",
-            device=torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
-            ),
+            device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         )
 
     def calculate_embeddings(self, sentences, prompt: str = None):
@@ -810,20 +809,20 @@ class KGRAGModelTask3:
             user_message = ""
             user_message += f"Query: {query}\n"
             user_message += f"Query Time: {query_time}\n"
-    
+
             formatted_prompts.append(
-                    [
-                        {"role": "system", "content": Entity_Extract_TEMPLATE},
-                        {"role": "user", "content": user_message},
-                    ]
-            )      
+                [
+                    {"role": "system", "content": Entity_Extract_TEMPLATE},
+                    {"role": "user", "content": user_message},
+                ]
+            )
         return formatted_prompts
 
     def extract_entity(self, queries, query_times) -> list[dict]:
         formatted_prompts = self.format_prompts_for_entity_extraction(
             queries, query_times
         )
-        '''
+        """
         responses = self.llm.generate(
             formatted_prompts,
             vllm.SamplingParams(
@@ -835,7 +834,7 @@ class KGRAGModelTask3:
             ),
             use_tqdm=False,  # you might consider setting this to True during local development
         )
-        '''
+        """
         responses = []
         for prompt in formatted_prompts:
             response = self.llm.chat.completions.create(
@@ -848,10 +847,9 @@ class KGRAGModelTask3:
             )
             responses.append(response)
 
-
         entities = []
         for response in responses:
-            #res = response.outputs[0].text
+            # res = response.outputs[0].text
             res = response.choices[0].message.content
             try:
                 res = json.loads(res)
@@ -1136,7 +1134,7 @@ class KGRAGModelTask3:
         )
         curr_start_time = time.perf_counter()
 
-        if self.add_direct_answers:
+        if self.add_direct_answers and len(queries) > 0:
             direct_answers = self.get_direct_answers(queries)
         else:
             direct_answers = [None for _ in queries]
@@ -1174,12 +1172,12 @@ class KGRAGModelTask3:
         )
         for _idx, _reasoning_prompt in zip(pred_idxs, reasoning_formatted_prompts):
             reasoning_prompts[_idx] = _reasoning_prompt
-        #if len(pred_idxs) == 0:
+        # if len(pred_idxs) == 0:
         #    curr_sample_num = 1
-        #else:
+        # else:
         #    curr_sample_num = max(int(4 / (len(pred_idxs))), 1)
-        
-        '''
+
+        """
         reasoning_responses = self.llm.generate(
             reasoning_formatted_prompts,
             vllm.SamplingParams(
@@ -1191,7 +1189,7 @@ class KGRAGModelTask3:
             ),
             use_tqdm=False,  # you might consider setting this to True during local development
         )
-        '''
+        """
 
         reasoning_responses = []
 
@@ -1218,8 +1216,10 @@ class KGRAGModelTask3:
                 idx,
                 response,
             )
-            #all_ret_answers = [o["text"].strip().rstrip() for o in response["outputs"]]
-            all_ret_answers = [o.message.content.strip().rstrip() for o in response.choices]
+            # all_ret_answers = [o["text"].strip().rstrip() for o in response["outputs"]]
+            all_ret_answers = [
+                o.message.content.strip().rstrip() for o in response.choices
+            ]
             all_reasoning_outputs[pred_idxs[idx]] = all_ret_answers
             is_idk = False
             for tmp_ret_answer in all_ret_answers:
@@ -1349,7 +1349,7 @@ class KGRAGModelTask3:
             reasoning_answers,
         )
 
-        '''
+        """
         # Generate responses via vllm
         responses = self.llm.generate(
             formatted_prompts,
@@ -1362,7 +1362,7 @@ class KGRAGModelTask3:
             ),
             use_tqdm=False,  # you might consider setting this to True during local development
         )
-        '''
+        """
         responses = []
         for prompt in formatted_prompts:
             response = self.llm.chat.completions.create(
@@ -1384,9 +1384,9 @@ class KGRAGModelTask3:
                 pred_idxs,
                 idx,
             )
-            #ret_answer = response.outputs[0].text.strip().rstrip()
+            # ret_answer = response.outputs[0].text.strip().rstrip()
             ret_answer = response.choices[0].message.content.strip().rstrip()
-            #prompt_lens.append(len(response.prompt_token_ids))
+            # prompt_lens.append(len(response.prompt_token_ids))
             prompt_lens.append(response.usage.prompt_tokens)
             if ret_answer == "":
                 ret_answer = "I don't know."
@@ -1466,13 +1466,13 @@ Let's think step by step now!"""
         for _idx, query in enumerate(queries):
             user_message = query
             formatted_prompts.append(
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                    ]
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ]
             )
-        
-        '''
+
+        """
         direct_reasoning_responses = self.llm.generate(
             formatted_prompts,
             vllm.SamplingParams(
@@ -1484,7 +1484,7 @@ Let's think step by step now!"""
             ),
             use_tqdm=False,  # you might consider setting this to True during local development
         )
-        '''
+        """
         direct_reasoning_responses = []
         for prompt in formatted_prompts:
             try:
@@ -1499,11 +1499,13 @@ Let's think step by step now!"""
                 direct_reasoning_responses.append(response)
             except Exception as e:
                 logger.error(f"Error generating response for prompt: {prompt}\n{e}")
-                direct_reasoning_responses.append({"choices": [{"message": {"content": "I don't know."}}]})
+                direct_reasoning_responses.append(
+                    {"choices": [{"message": {"content": "I don't know."}}]}
+                )
 
         direct_answers = []
         for idx, response in enumerate(direct_reasoning_responses):
-            #response_text = response.outputs[0].text.strip().rstrip()
+            # response_text = response.outputs[0].text.strip().rstrip()
             response_text = response.choices[0].message.content.strip().rstrip()
             if response_text == "" or "i don't know" in response_text.lower():
                 response_text = "I don't know."
@@ -1654,10 +1656,10 @@ Let's think step by step now!"""
             user_message += f"Question: {query}\n"
             user_message += "Let's think step by step now!\n"
             formatted_prompts.append(
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                    ]
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ]
             )
         return formatted_prompts
 
@@ -1689,11 +1691,11 @@ Let's think step by step now!"""
 
             user_message += f"Using the reasoning process above, answer the question."
 
-            formatted_prompts.append(  
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                    ]
+            formatted_prompts.append(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ]
             )
 
         return formatted_prompts

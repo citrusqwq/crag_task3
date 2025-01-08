@@ -14,13 +14,16 @@ from loguru import logger
 from openai import APIConnectionError, OpenAI, RateLimitError
 from prompts.templates import IN_CONTEXT_EXAMPLES, INSTRUCTIONS
 from tqdm.auto import tqdm
-from transformers import LlamaTokenizerFast
-#from api_key import deepseek_api_key, openai_api_key
+
+# from transformers import LlamaTokenizerFast
+
+# from api_key import deepseek_api_key, openai_api_key
 
 
-#tokenizer = LlamaTokenizerFast.from_pretrained("tokenizer")
-#LOG_DIR = None
-LOG_DIR = "/Users/xygong/LUH/Master/WS24/AI Lab/crag-new/Log"
+# tokenizer = LlamaTokenizerFast.from_pretrained("tokenizer")
+# LOG_DIR = None
+LOG_DIR = "./Log"
+
 
 def load_json_file(file_path):
     """Load and return the content of a JSON file."""
@@ -93,6 +96,7 @@ def parse_response(resp: str):
             return 1
         return -1
 
+
 '''
 def trim_predictions_to_max_token_length(prediction):
     """Trims prediction output to 75 tokens"""
@@ -102,6 +106,7 @@ def trim_predictions_to_max_token_length(prediction):
     trimmed_prediction = tokenizer.decode(trimmed_tokenized_prediction)
     return trimmed_prediction
 '''
+
 
 def load_data_in_batches(dataset_items, batch_size):
     """
@@ -245,7 +250,7 @@ def generate_predictions(dataset_path, participant_model, case_idxs: list[int]):
         queries, ground_truths, predictions, domains, question_types, static_or_dynamics
     ):
         # trim prediction to 75 tokens
-        #prediction = trim_predictions_to_max_token_length(prediction)
+        # prediction = trim_predictions_to_max_token_length(prediction)
         if len(all_predicted_attrs) > 0:
             pred_attrs = all_predicted_attrs[curr_idx]
         else:
@@ -289,7 +294,7 @@ def generate_predictions(dataset_path, participant_model, case_idxs: list[int]):
                 assert reasoning_output is None
             if reasoning_output is None:
                 assert reasoning_prompt is None
-            
+
             f.write("=" * 50 + "\n")
             f.write(f"Query:\n{query}\n")
             f.write("*" * 50 + "\n")
@@ -325,7 +330,7 @@ def old_generate_predictions(dataset_path, participant_model, args):
                     query, web_search_results, query_time
                 )
                 # trim prediction to 75 tokens
-                #prediction = trim_predictions_to_max_token_length(prediction)
+                # prediction = trim_predictions_to_max_token_length(prediction)
                 predictions.append(
                     {
                         "query": query,
@@ -353,7 +358,7 @@ def old_generate_predictions(dataset_path, participant_model, args):
                 query, web_search_results, query_time
             )
             # trim prediction to 75 tokens
-            #prediction = trim_predictions_to_max_token_length(prediction)
+            # prediction = trim_predictions_to_max_token_length(prediction)
             predictions.append(
                 {
                     "query": query,
@@ -600,9 +605,7 @@ if __name__ == "__main__":
         default="",
     )
     parser.add_argument(
-        "--invalid_question_keys",
-        type=str,
-        default='["none", "never"]'
+        "--invalid_question_keys", type=str, default='["none", "never"]'
     )
     args = parser.parse_args()
     args.idk_attrs = json.loads(args.idk_attrs)
@@ -619,22 +622,22 @@ if __name__ == "__main__":
     logger.info(json.dumps(vars(args), indent=2))
     setup_seed(args.seed)
     if args.use_public_test:
-        #DATASET_PATH = "../data-explore/crag_task_3_dev_v3/crag_task_3_dev_v3_full.jsonl"
-        #DATASET_PATH = "/Users/xygong/LUH/Master/WS24/AI Lab/crag_task_3_dev_v4/crag_task_3_dev_v4_0.jsonl"
-        DATASET_PATH = "/Users/xygong/LUH/Master/WS24/AI Lab/crag-new/dev_data.jsonl"
+        # DATASET_PATH = "../data-explore/crag_task_3_dev_v3/crag_task_3_dev_v3_full.jsonl"
+        DATASET_PATH = "../crag_task_3_dev_v4/crag_task_3_dev_v4_1.jsonl"
+        # DATASET_PATH = "./dev_data.jsonl"
     else:
         raise ValueError("Only public test is supported for now.")
 
-    #EVALUATION_MODEL_NAME = os.getenv("EVALUATION_MODEL_NAME", "gpt-3.5-turbo-0125")
-    #openai_client = OpenAI(api_key=openai_api_key)
+    # EVALUATION_MODEL_NAME = os.getenv("EVALUATION_MODEL_NAME", "gpt-3.5-turbo-0125")
+    # openai_client = OpenAI(api_key=openai_api_key)
 
-    EVALUATION_MODEL_NAME = os.getenv("EVALUATION_MODEL_NAME", "llama3.2:3b-instruct-fp16")
+    EVALUATION_MODEL_NAME = os.getenv("EVALUATION_MODEL_NAME", "gemma2:27b")
 
-    #EVALUATION_MODEL_NAME = "deepseek-chat"
-    #openai_client = OpenAI(
+    # EVALUATION_MODEL_NAME = "deepseek-chat"
+    # openai_client = OpenAI(
     #    base_url="https://api.deepseek.com",
     #    api_key=deepseek_api_key,
-    #)
+    # )
 
     # Generate predictions
     # participant_model = UserModel(debug=True)
@@ -678,7 +681,7 @@ if __name__ == "__main__":
 
     openai_client = OpenAI(
         base_url=os.getenv("INTERWEB_HOST", "https://interweb.l3s.uni-hannover.de"),
-        api_key=os.getenv("INTERWEB_APIKEY")
+        api_key=os.getenv("INTERWEB_APIKEY"),
     )
 
     evaluation_results = evaluate_predictions(
